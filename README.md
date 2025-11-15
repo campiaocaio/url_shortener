@@ -1,175 +1,69 @@
+# 🧩 URL Shortener – Python API + Infraestrutura Completa
 
-![status](https://img.shields.io/badge/status-EM%20DESENVOLVIMENTO-yellow)
+Este projeto é um URL Shortener desenvolvido em Python (FastAPI) com persistência de dados em PostgreSQL, estruturado como um estudo completo de infraestrutura, automação e boas práticas de arquitetura.
 
-# URL Shortener API
+O foco do projeto vai além da API: ele cobre todo o ciclo de criação de um ambiente profissional, desde o provisionamento de máquinas virtuais até segurança, monitoramento e automação.
 
-> ⚠️ **Este projeto está em desenvolvimento ativo. Funcionalidades, endpoints e estrutura podem mudar a qualquer momento.**
+---
 
-Uma API FastAPI simples e robusta para encurtar URLs com contador de acessos.
+## 🚀 Tecnologias e Conceitos Utilizados
 
-## 🚀 Características
+### 🖥️ Infraestrutura
 
-- ✅ **Criar URLs encurtadas** com slugs customizados
-- ✅ **Redirecionar** para URL original via slug
-- ✅ **Contador de acessos** (hits) por URL
-- ✅ **Validação de slugs duplicados** com tratamento de erro HTTP 400
-- ✅ **Testes unitários** (CRUD) e integração (HTTP)
-- ✅ **Banco de dados PostgreSQL** com SQLAlchemy ORM
-- ✅ **Documentação automática** Swagger UI
+- Virtualização utilizando VirtualBox
+- Sistema Operacional alvo: Rocky Linux
+- Tipos de rede: NAT, Bridge, Redes Internas
+- Roteamento e comunicação entre VMs
 
-## 📋 Pré-requisitos
+### 🌐 Serviços
 
-- **Python 3.9+**
-- **PostgreSQL 12+**
-- **pip** ou **conda**
+- Nginx como proxy reverso
+- PostgreSQL (versão 18 prevista) como banco de dados
+- Prometheus + Node Exporter para métricas (scraping)
+- Grafana (opcional) para dashboards
 
-## 🔧 Instalação
+### 🔐 Segurança
 
-### 1. Clonar o repositório
+- firewalld configurado com política padrão DROP
+- Abertura seletiva apenas das portas necessárias (SSH, API, DB, monitoramento)
+- Usuários e credenciais isoladas para serviços
 
-```bash
-git clone https://github.com/seu-usuario/url_shortener.git
-cd url_shortener
-```
+### 🤖 Automação
 
-### 2. Criar ambiente virtual
+- Ansible para provisionamento e gerenciamento das VMs
+- Playbooks para instalação, hardening e configuração de firewall
+- Deploy básico da aplicação via tasks/handlers do Ansible
 
-```bash
-python3 -m venv venv
-source venv/bin/activate  # Linux/macOS
-# ou
-venv\Scripts\activate  # Windows
-```
+---
 
-### 3. Instalar dependências
+## 🧪 Aplicação – URL Shortener
 
-```bash
-pip install -r requirements.txt
-```
+- Implementada com FastAPI
+- Banco de dados PostgreSQL com tabela `urls`
+- Funcionalidades principais:
+  - Criar URLs encurtadas (com slug customizável)
+  - Resolver/Redirecionar para a URL original
+  - Registrar acessos (`hits`) por URL
+- Boas práticas adotadas:
+  - Validação com Pydantic
+  - Tratamento de erros de integridade (slug duplicado → HTTP 400)
+  - Variáveis de ambiente para credenciais e configuração
+- Para documentação completa da API, veja [`app/README_API.md`](app/README_API.md)
 
-### 4. Configurar variáveis de ambiente
+---
 
-Copie `.env.example` para `.env` e configure:
+## 🎯 Objetivo do Projeto
 
-```bash
-cp .env.example .env
-```
+Este projeto simula um ambiente real de produção para fins de estudo e aprendizado em DevOps/engenharia de infraestrutura. Os objetivos incluem:
 
-Edite o arquivo `.env` com suas credenciais PostgreSQL:
+- Criar uma API funcional e testável
+- Construir a infraestrutura necessária para rodar a aplicação
+- Integrar automação, segurança e monitoramento
+- Documentar e exemplificar práticas operacionais (backup, hardening, observabilidade)
 
-```env
-DB_USER=seu_usuario
-DB_PASSWORD=sua_senha
-DB_NAME=shortener_db
-DB_HOST=localhost
-DB_PORT=5432
-```
+---
 
-### 5. Criar banco de dados (se não existir)
-
-```bash
-psql -U postgres
-CREATE DATABASE shortener_db;
-CREATE USER shortener_user WITH PASSWORD 'futebol';
-GRANT ALL PRIVILEGES ON DATABASE shortener_db TO shortener_user;
-```
-
-## 🚀 Executar a aplicação
-
-```bash
-uvicorn app.main:app --reload
-```
-
-A API estará disponível em: **http://127.0.0.1:8000**
-
-Documentação Swagger: **http://127.0.0.1:8000/docs**
-
-## 📝 Uso da API
-
-### Criar URL encurtada
-
-```bash
-curl -X POST "http://127.0.0.1:8000/create" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "slug": "github",
-    "target_url": "https://github.com"
-  }'
-```
-
-**Resposta (HTTP 200):**
-```json
-{
-  "target_url": "https://github.com",
-  "id": 1,
-  "slug": "github",
-  "created_at": "2025-11-15T02:00:00.000000",
-  "hits": 0
-}
-```
-
-### Acessar URL encurtada
-
-```bash
-curl -X GET "http://127.0.0.1:8000/github"
-```
-
-**Resposta (HTTP 200):**
-```json
-{
-  "target_url": "https://github.com"
-}
-```
-
-*Nota: Cada acesso incrementa o contador `hits` no banco de dados.*
-
-### Tentar criar slug duplicado
-
-```bash
-curl -X POST "http://127.0.0.1:8000/create" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "slug": "github",
-    "target_url": "https://other-url.com"
-  }'
-```
-
-**Resposta (HTTP 400):**
-```json
-{
-  "detail": "Slug já existe"
-}
-```
-
-## 🧪 Testes
-
-### Testes Unitários (CRUD)
-
-Testa as funções Python isoladamente usando SQLite em memória:
-
-```bash
-python -m pytest tests/test_crud.py -v
-```
-
-**Resultado esperado:** 4 testes passando
-
-### Testes de Integração (API HTTP)
-
-Testa os endpoints HTTP contra o servidor rodando:
-
-1. **Terminal 1**: Inicie o servidor
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-
-2. **Terminal 2**: Execute os testes
-   ```bash
-   python tests/test_api.py
-   ```
-
-**Resultado esperado:** Todos os testes passando
-
-## 📁 Estrutura do Projeto
+## 📚 Estrutura (resumo)
 
 ```
 url_shortener/
@@ -179,89 +73,31 @@ url_shortener/
 │   ├── database.py           # Configuração SQLAlchemy
 │   ├── models.py             # Modelos ORM (SQL)
 │   ├── schemas.py            # Schemas Pydantic (validação)
-│   └── crud.py               # Funções CRUD com tratamento de erro
+│   ├── crud.py               # Funções CRUD com tratamento de erro
+│   └── README_API.md         # Documentação da API
 │
 ├── tests/
 │   ├── __init__.py
 │   ├── test_crud.py          # Testes unitários (pytest)
 │   └── test_api.py           # Testes de integração (requests)
 │
+├── Ansible/
+│   └── firewall-seguro.yml   # Playbook de configuração de firewall
+│
 ├── requirements.txt          # Dependências Python
 ├── .env.example              # Template de variáveis de ambiente
 ├── .gitignore                # Arquivos a ignorar no Git
 ├── LICENSE                   # Licença MIT
-└── README.md                 # Este arquivo
+└── README.md                 # Este arquivo (visão geral do projeto)
 ```
-
-## 🏗️ Arquitetura
-
-### Fluxo de dados
-
-```
-Cliente HTTP
-    ↓
-FastAPI Router (/create, /{slug})
-    ↓
-Dependência (get_db) - SessionLocal
-    ↓
-Funções CRUD (app/crud.py)
-    ↓
-Models ORM (app/models.py)
-    ↓
-SQLAlchemy Engine
-    ↓
-PostgreSQL Database
-```
-
-### Tratamento de erros
-
-| Operação | Erro | Status HTTP | Mensagem |
-|----------|------|-----------|----------|
-| POST /create com slug duplicado | IntegrityError | 400 | "Slug já existe" |
-| GET /{slug} não encontrado | QueryError | 404 | "Slug não encontrado" |
-| Outros erros | Exception | 500 | Detalhes do erro |
-
-## 🔐 Segurança
-
-- ✅ Variáveis de ambiente para credenciais (não hardcoded)
-- ✅ Validação de entrada com Pydantic
-- ✅ Constraint único no banco para slugs
-- ✅ Tratamento de exceções SQL (IntegrityError)
-
-## 📦 Dependências principais
-
-- **FastAPI 0.111.1** - Framework web assíncrono
-- **Uvicorn 0.30.1** - Servidor ASGI
-- **SQLAlchemy 2.0.31** - ORM Python
-- **Psycopg2 2.9.9** - Driver PostgreSQL
-- **Pydantic 2.x** - Validação de dados
-- **Pytest 7.4.3** - Framework de testes
-- **Requests 2.31.0** - Cliente HTTP para testes
-
-## 🤝 Contribuindo
-
-1. Faça um Fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 📄 Licença
-
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 📞 Contato
-
-- **Autor:** Seu Nome
-- **Email:** seu.email@exemplo.com
-- **GitHub:** [@seu-usuario](https://github.com/seu-usuario)
-
-## 🙏 Agradecimentos
-
-- FastAPI por ser um framework fantástico
-- SQLAlchemy pela excelente abstração de banco de dados
-- PostgreSQL pela robustez e confiabilidade
 
 ---
 
-**Desenvolvido com ❤️ em Python**
+## ✅ Próximos passos
+
+- Incluir 9100/tcp (node_exporter) no playbook `Ansible/firewall-seguro.yml` para permitir scraping do Prometheus
+- Criar playbooks separados por funções (db, api, monitoring) e usar roles para reuso
+
+---
+
+Desenvolvido como um projeto educacional e referência para práticas de infraestrutura e devops aplicada a uma aplicação Python.
