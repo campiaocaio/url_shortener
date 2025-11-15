@@ -1,0 +1,33 @@
+---
+- name: Testes de conectividade da infraestrutura
+  hosts: all_vms
+  gather_facts: no
+
+  tasks:
+    - name: Teste 1 - Ping externo (8.8.8.8)
+      shell: ping -c 2 8.8.8.8
+      register: ping_internet
+      ignore_errors: yes
+
+    - name: Mostrar resultado do ping externo
+      debug:
+        var: ping_internet.stdout_lines
+
+    - name: Teste 2 - Resolucao DNS (ping google.com)
+      shell: ping -c 2 google.com
+      register: ping_dns
+      ignore_errors: yes
+
+    - name: Mostrar resultado do teste DNS
+      debug:
+        var: ping_dns.stdout_lines
+
+    - name: Teste 3 - Ping entre todas as máquinas
+      shell: "ping -c 1 {{ item }}"
+      loop: "{{ groups['all_vms'] }}"
+      register: ping_interno
+      ignore_errors: yes
+
+    - name: Mostrar resultado do ping interno
+      debug:
+        var: ping_interno.results

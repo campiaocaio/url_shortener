@@ -1,0 +1,88 @@
+---
+- name: Firewall seguro em todas as VMs
+  hosts: all_vms
+  become: yes
+
+  tasks:
+
+    - name: Instalar firewalld
+      yum:
+        name: firewalld
+        state: present
+
+    - name: Garantir firewalld ativo
+      service:
+        name: firewalld
+        state: started
+        enabled: yes
+
+    - name: Definir zona padrão como DROP (bloqueia tudo)
+      command: firewall-cmd --set-default-zone=drop
+
+    - name: Permitir SSH para administração
+      firewalld:
+        service: ssh
+        zone: drop
+        permanent: yes
+        state: enabled
+
+    #########################################################
+    #  GATEWAY / PROXY
+    #########################################################
+    - name: Liberar portas HTTP/HTTPS no proxy
+      firewalld:
+        port: "{{ item }}"
+        zone: drop
+        permanent: yes
+        state: enabled
+      loop:
+        - 80/tcp
+        - 443/tcp
+      when: "'gateway' in group_names or 'proxy' in group_names"
+
+    #########################################################
+    #  API SERVERS
+    #########################################################
+    - name: Liberar porta da API
+      firewalld:
+        port: 8080/tcp
+        zone: drop
+        permanent: yes
+        state: enabled
+      when: "'api' in group_names"
+
+    #########################################################
+    #  BANCO DE DADOS (POSTGRESQL)
+    #########################################################
+    - name: Liberar porta do PostgreSQL
+      firewalld:
+        port: 5432/tcp
+        zone: drop
+        permanent: yes
+        state: enabled
+      when: "'database' in group_names"
+
+    #########################################################
+    #  MONITORAMENTO (PROMETHEUS + GRAFANA)
+    #########################################################
+    - name: Liberar porta Prometheus
+      firewalld:
+        port: 9090/tcp
+        zone: drop
+        permanent: yes
+        state: enabled
+      when: "'monitoramento' in group_names"
+
+    - name: Liberar porta Grafana
+      firewalld:
+        port: 3000/tcp
+        zone: drop
+        permanent: yes
+        state: enabled
+      when: "'monitoramento' in group_names"
+
+    #########################################################
+    #  Aplicar alterações
+    #########################################################
+    - name: Reload firewalld
+      command: firewall-cmd --reload
